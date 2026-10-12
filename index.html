@@ -19,15 +19,6 @@
   h1{font-size:20px; text-align:center; margin:8px 0 4px;}
   .tip{text-align:center; color:var(--sub); font-size:13px; margin-bottom:16px;}
 
-  /* 顶部快捷按钮 */
-  .top-bar{display:flex; gap:12px; margin-bottom:16px;}
-  .top-bar button{
-    flex:1; padding:14px; border-radius:10px; border:none;
-    font-size:15px; font-weight:600; cursor:pointer;
-  }
-  #topCopyBtn{background:var(--accent2); color:#fff;}
-  #topGenBtn{background:var(--accent); color:#fff;}
-
   /* 粘贴解析区 */
   .paste-box{
     background:var(--card); border:1px solid var(--line);
@@ -98,12 +89,6 @@
   <h1>深圳MMK万事屋の委托报告</h1>
   <div class="tip">填写信息 → 点击生成 → 复制到 Telegram</div>
 
-  <!-- 顶部快捷操作 -->
-  <div class="top-bar">
-    <button id="topGenBtn">⚡ 生成报告</button>
-    <button id="topCopyBtn">📋 复制报告</button>
-  </div>
-
   <!-- 粘贴解析区 -->
   <div class="paste-box">
     <label>📥 粘贴已有报告，自动填充下方表单</label>
@@ -127,7 +112,7 @@
     <datalist id="targetList"></datalist>
 
     <label>#联系方式 <span class="req">*</span></label>
-    <input id="contact" placeholder="点击查看客服号信息 (https://t.me/...)">
+    <input id="contact" placeholder="输入客服联系方式：如@bujidaotoutou">
 
     <label>#委托人 <span class="req">*</span></label>
     <input id="client" placeholder="例如：XX">
@@ -136,7 +121,7 @@
     <input id="date" type="date">
 
     <label>#委托报酬 <span class="req">*</span></label>
-    <input id="fee" placeholder="例如：599-100（万事屋优惠）">
+    <input id="fee" placeholder="例如：599-100；填写实际优惠">
   </fieldset>
 
   <!-- 被委托人特征 -->
@@ -155,38 +140,38 @@
 
   <!-- 评分 -->
   <fieldset>
-    <legend>评分（0 - 10，必填）</legend>
+    <legend>评分（填 0 - 10，或填 X 表示不适用）</legend>
 
     <div class="row">
       <div>
         <label>#人照一致度 <span class="req">*</span></label>
-        <input id="s_look" type="number" min="0" max="10" step="0.1">
+        <input id="s_look" type="text" inputmode="decimal" placeholder="0-10 或 X">
       </div>
       <div>
         <label>#颜值 <span class="req">*</span></label>
-        <input id="s_face" type="number" min="0" max="10" step="0.1">
+        <input id="s_face" type="text" inputmode="decimal" placeholder="0-10 或 X">
       </div>
     </div>
 
     <div class="row">
       <div>
         <label>#上路评分 <span class="req">*</span></label>
-        <input id="s_top" type="number" min="0" max="10" step="0.1">
+        <input id="s_top" type="text" inputmode="decimal" placeholder="0-10 或 X">
       </div>
       <div>
         <label>#中路评分 <span class="req">*</span></label>
-        <input id="s_mid" type="number" min="0" max="10" step="0.1">
+        <input id="s_mid" type="text" inputmode="decimal" placeholder="0-10 或 X">
       </div>
     </div>
 
     <div class="row">
       <div>
         <label>#情绪价值评分 <span class="req">*</span></label>
-        <input id="s_emo" type="number" min="0" max="10" step="0.1">
+        <input id="s_emo" type="text" inputmode="decimal" placeholder="0-10 或 X">
       </div>
       <div>
         <label>#综合评分 <span class="req">*</span></label>
-        <input id="s_all" type="number" min="0" max="10" step="0.1">
+        <input id="s_all" type="text" inputmode="decimal" placeholder="0-10 或 X">
       </div>
     </div>
   </fieldset>
@@ -246,6 +231,15 @@ $('place').addEventListener('input', () => {
   });
 });
 
+/* ---------- 评分小写 x 自动转大写 X ---------- */
+document.querySelectorAll('input[inputmode="decimal"]').forEach(el => {
+  el.addEventListener('blur', () => {
+    if(el.value.trim().toUpperCase() === 'X'){
+      el.value = 'X';
+    }
+  });
+});
+
 /* ---------- 通用必填校验 ---------- */
 const REQUIRED = [
   { id: 'place',   name: '#委托发生地' },
@@ -279,9 +273,12 @@ function validate(){
     }
 
     if(item.isScore){
+      // 允许 X
+      if(val.toUpperCase() === 'X') continue;
+
       const num = Number(val);
       if(isNaN(num) || num < 0 || num > 10){
-        showToast(`❌ ${item.name} 必须在 0 - 10 之间`, true);
+        showToast(`❌ ${item.name} 必须填 0 - 10 或 X`, true);
         el.focus();
         el.select();
         return false;
@@ -290,18 +287,6 @@ function validate(){
   }
   return true;
 }
-
-/* ---------- 评分输入实时钳制在 0-10 ---------- */
-document.querySelectorAll('input[type="number"]').forEach(el => {
-  el.addEventListener('blur', () => {
-    if(el.value === '') return;
-    let v = Number(el.value);
-    if(isNaN(v)) { el.value = ''; return; }
-    if(v < 0) v = 0;
-    if(v > 10) v = 10;
-    el.value = v;
-  });
-});
 
 /* ---------- 生成报告 ---------- */
 function buildReport(){
@@ -321,12 +306,12 @@ function buildReport(){
   const body = $('body').value.trim();
   const char = $('char').value.trim();
 
-  const sLook = $('s_look').value;
-  const sFace = $('s_face').value;
-  const sTop  = $('s_top').value;
-  const sMid  = $('s_mid').value;
-  const sEmo  = $('s_emo').value;
-  const sAll  = $('s_all').value;
+  const sLook = $('s_look').value.trim();
+  const sFace = $('s_face').value.trim();
+  const sTop  = $('s_top').value.trim();
+  const sMid  = $('s_mid').value.trim();
+  const sEmo  = $('s_emo').value.trim();
+  const sAll  = $('s_all').value.trim();
 
   const process = $('process').value.trim();
   const summary = $('summary').value.trim();
@@ -375,25 +360,16 @@ function parseReport(text){
     return '';
   }
 
-  // 委托发生地
   let place = findLine('#委托发生地');
   place = place.replace(/^#/, '').trim();
 
-  // 被委托人
   let target = findLine('#被委托人');
   target = target.replace(/^#/, '').trim();
 
-  // 联系方式
   const contact = findLine('#联系方式');
-
-  // 委托人
-  const client = findLine('#委托人');
-
-  // 委托日期
-  const date = findLine('#委托日期');
-
-  // 委托报酬
-  const fee = findLine('#委托报酬');
+  const client  = findLine('#委托人');
+  const date    = findLine('#委托日期');
+  const fee     = findLine('#委托报酬');
 
   // 标签：在 #被委托人特征 下一行
   let tags = '';
@@ -406,7 +382,6 @@ function parseReport(text){
     }
   }
 
-  // 评分
   const sLook = findLine('#人照一致度');
   const sFace = findLine('#颜值');
   const sTop  = findLine('#上路评分');
@@ -414,7 +389,6 @@ function parseReport(text){
   const sEmo  = findLine('#情绪价值评分');
   const sAll  = findLine('#综合评分');
 
-  // 身材 / 性格
   const body = findLine('#身材');
   const char = findLine('#性格');
 
@@ -437,15 +411,11 @@ function parseReport(text){
     summary = lines.slice(sIdx + 1, end).join('\n').trim();
   }
 
-  /* ---------- 回填 ---------- */
-
-  // 地点：直接填，并刷新被委托人建议
+  /* 回填 */
   if(place){
     $('place').value = place;
     $('place').dispatchEvent(new Event('input'));
   }
-
-  // 被委托人：直接填
   if(target){
     $('target').value = target;
   }
@@ -514,32 +484,6 @@ $('resetBtn').addEventListener('click', () => {
   const p = $('preview');
   p.classList.add('placeholder');
   p.textContent = '点击「生成报告」后，最终内容会显示在这里。';
-});
-
-// 顶部快捷按钮
-$('topGenBtn').addEventListener('click', () => {
-  $('genBtn').click();
-});
-
-$('topCopyBtn').addEventListener('click', async () => {
-  if(!validate()) return;
-  const text = buildReport();
-
-  const p = $('preview');
-  p.classList.remove('placeholder');
-  p.textContent = text;
-
-  try{
-    await navigator.clipboard.writeText(text);
-    showToast('已生成并复制 ✓');
-  }catch(e){
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('已生成并复制 ✓');
-  }
 });
 
 /* ---------- Toast ---------- */
