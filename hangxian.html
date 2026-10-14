@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深圳MMK伟大航线の航线报告生成器</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --line:#262b36;
+    --text:#e6e8ee; --sub:#9aa3b2; --accent:#4f8cff; --accent2:#22c55e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6; padding:16px;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+  h1{font-size:20px; text-align:center; margin:8px 0 4px;}
+  .tip{text-align:center; color:var(--sub); font-size:13px; margin-bottom:12px;}
+
+  /* 模板切换 */
+  .switch{display:flex; gap:8px; justify-content:center; margin-bottom:18px; flex-wrap:wrap;}
+  .switch a{
+    padding:7px 18px; border-radius:999px; font-size:13px; text-decoration:none;
+    border:1px solid var(--line); color:var(--sub); background:var(--card);
+    transition:.2s;
+  }
+  .switch a:hover{color:var(--text); border-color:var(--accent);}
+  .switch a.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+
+  /* 粘贴解析区 */
+  .paste-box{
+    background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:16px; margin-bottom:20px;
+  }
+  .paste-box label{
+    display:block; font-size:13px; color:var(--accent);
+    font-weight:600; margin-bottom:8px;
+  }
+  #pasteInput{
+    width:100%; min-height:120px; resize:vertical;
+    background:#0d0f14; color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:10px 12px; font-size:13px;
+    font-family:"PingFang SC","Microsoft YaHei",monospace; outline:none;
+  }
+  #pasteInput:focus{border-color:var(--accent);}
+  .paste-btns{display:flex; gap:12px; margin-top:10px;}
+  .paste-btns button{
+    flex:1; padding:10px; border-radius:8px; border:none;
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  #parseBtn{background:var(--accent); color:#fff;}
+  #clearPasteBtn{background:#2a2f3a; color:var(--text);}
+
+  fieldset{
+    border:1px solid var(--line); border-radius:12px;
+    padding:16px; margin:0 0 16px; background:var(--card);
+  }
+  legend{padding:0 8px; font-size:14px; color:var(--accent); font-weight:600;}
+  label{display:block; font-size:13px; color:var(--sub); margin:12px 0 6px;}
+  label:first-of-type{margin-top:0;}
+  .req{color:#ff6b6b;}
+  input,textarea,select{
+    width:100%; padding:10px 12px; border-radius:8px;
+    border:1px solid var(--line); background:#0d0f14; color:var(--text);
+    font-size:14px; font-family:inherit; outline:none;
+  }
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+  textarea{resize:vertical; min-height:80px;}
+  .row{display:flex; gap:12px;}
+  .row > div{flex:1;}
+
+  /* 评分行 */
+  .score-row{margin:14px 0 0;}
+  .score-row label{margin:0 0 6px;}
+  .score-inputs{display:flex; gap:10px;}
+  .score-inputs .num{flex:0 0 92px; text-align:center; font-weight:600;}
+  .score-inputs .note{flex:1;}
+
+  .btns{display:flex; gap:12px; margin:20px 0;}
+  button{
+    flex:1; padding:12px; border-radius:10px; border:none;
+    font-size:15px; font-weight:600; cursor:pointer;
+  }
+  #genBtn{background:var(--accent); color:#fff;}
+  #copyBtn{background:var(--accent2); color:#fff;}
+  #resetBtn{background:#2a2f3a; color:var(--text);}
+  #preview{
+    white-space:pre-wrap; word-break:break-word;
+    background:#0d0f14; border:1px solid var(--line); border-radius:12px;
+    padding:16px; font-size:14px; line-height:1.8; min-height:120px;
+    font-family:"PingFang SC","Microsoft YaHei",monospace;
+  }
+  .placeholder{color:var(--sub);}
+  .toast{
+    position:fixed; left:50%; bottom:30px; transform:translateX(-50%);
+    background:var(--accent2); color:#fff; padding:10px 20px;
+    border-radius:8px; font-size:14px; opacity:0; pointer-events:none;
+    transition:opacity .25s; z-index:99;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>深圳MMK伟大航线の航线报告</h1>
+  <div class="tip">填写信息 → 点击生成 → 复制到 Telegram</div>
+
+  <!-- 模板切换 -->
+  <div class="switch">
+    <a href="index.html">🚢 委托报告</a>
+    <a href="hangxian.html" class="active">⛵ 航线报告</a>
+    <a href="zhentan.html">🔍 侦探报告</a>
+  </div>
+
+  <!-- 粘贴解析区 -->
+  <div class="paste-box">
+    <label>📥 粘贴已有航线报告，自动填充下方表单</label>
+    <textarea id="pasteInput" placeholder="把完整的航线报告粘贴到这里，然后点「解析填充」"></textarea>
+    <div class="paste-btns">
+      <button id="parseBtn">解析填充</button>
+      <button id="clearPasteBtn">清空粘贴区</button>
+    </div>
+  </div>
+
+  <!-- 基本信息 -->
+  <fieldset>
+    <legend>基本信息</legend>
+
+    <div class="row">
+      <div>
+        <label>航线 <span class="req">*</span></label>
+        <input id="route" list="routeList" placeholder="请选择或输入航线（即委托发生地）">
+        <datalist id="routeList"></datalist>
+      </div>
+      <div>
+        <label>航海员 <span class="req">*</span></label>
+        <input id="sailor" list="sailorList" placeholder="请选择或输入航海员（即被委托人）">
+        <datalist id="sailorList"></datalist>
+      </div>
+    </div>
+
+    <label>船员 <span class="req">*</span></label>
+    <input id="crew" placeholder="自己的昵称">
+
+    <label>出海联系 <span class="req">*</span></label>
+    <input id="contact" placeholder="例如：@bujidaotoutou">
+
+    <label>商家ID <span class="req">*</span></label>
+    <input id="shopId" placeholder="商家ID">
+
+    <div class="row">
+      <div>
+        <label>出航经费 <span class="req">*</span></label>
+        <input id="fee" placeholder="例如：999">
+      </div>
+      <div>
+        <label>出海日期 <span class="req">*</span></label>
+        <input id="date" type="date">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>适合人群 <span class="req">*</span></label>
+        <input id="crowd" placeholder="i人 / e人">
+      </div>
+      <div>
+        <label>返航次数 <span class="req">*</span></label>
+        <input id="times" placeholder="第一次 / 第二次……第N次">
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- 航海员特点 -->
+  <fieldset>
+    <legend>航海员特点</legend>
+
+    <label>标签（空格或逗号分隔，自动加 #） <span class="req">*</span></label>
+    <input id="tags" placeholder="御姐 腿玩年 大蟒蛇 颜值高 M 水滴胸">
+
+    <label>优点 <span class="req">*</span></label>
+    <input id="pros" placeholder="例如：态度好、不催钟、全程主动">
+
+    <label>缺点 <span class="req">*</span></label>
+    <input id="cons" placeholder="例如：无明显缺点 / 略冷淡">
+  </fieldset>
+
+  <!-- 评分 -->
+  <fieldset>
+    <legend>评分（填 0-10，或填 X 表示不适用；括号内备注选填）</legend>
+
+    <div class="score-row">
+      <label>颜值 <span class="req">*</span></label>
+      <div class="score-inputs">
+        <input id="s_face" class="num" inputmode="decimal" placeholder="0-10 或 X">
+        <input id="n_face" class="note" placeholder="邻家小妹 / 甜妹 / 御姐">
+      </div>
+    </div>
+
+    <div class="score-row">
+      <label>态度 <span class="req">*</span></label>
+      <div class="score-inputs">
+        <input id="s_att" class="num" inputmode="decimal" placeholder="0-10 或 X">
+        <input id="n_att" class="note" placeholder="配合度高 / 低，抗拒">
+      </div>
+    </div>
+
+    <div class="score-row">
+      <label>上路 <span class="req">*</span></label>
+      <div class="score-inputs">
+        <input id="s_top" class="num" inputmode="decimal" placeholder="0-10 或 X">
+        <input id="n_top" class="note" placeholder="浅蛇 / 大蟒蛇">
+      </div>
+    </div>
+
+    <div class="score-row">
+      <label>中路 <span class="req">*</span></label>
+      <div class="score-inputs">
+        <input id="s_mid" class="num" inputmode="decimal" placeholder="0-10 或 X">
+        <input id="n_mid" class="note" placeholder="abcde">
+      </div>
+    </div>
+
+    <div class="score-row">
+      <label>综合评分 <span class="req">*</span></label>
+      <div class="score-inputs">
+        <input id="s_all" class="num" inputmode="decimal" placeholder="0-10 或 X">
+        <input class="note" value="（1-5雷 6-8正常 9-10 幻神）" disabled style="opacity:.55;">
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- 正文 -->
+  <fieldset>
+    <legend>正文</legend>
+
+    <label>航海历程 <span class="req">*</span></label>
+    <textarea id="journey" placeholder="自由发挥，尽量详细……"></textarea>
+
+    <label>店内环境 <span class="req">*</span></label>
+    <textarea id="env" placeholder="例如：房间干净整洁，有独立卫浴，无异味……"></textarea>
+  </fieldset>
+
+  <div class="btns">
+    <button id="genBtn">生成报告</button>
+    <button id="copyBtn">复制报告</button>
+    <button id="resetBtn">清空</button>
+  </div>
+
+  <!-- 预览 -->
+  <fieldset>
+    <legend>报告预览</legend>
+    <div id="preview" class="placeholder">点击「生成报告」后，最终内容会显示在这里。</div>
+  </fieldset>
+</div>
+
+<div class="toast" id="toast">已复制到剪贴板 ✓</div>
+
+<!-- 共用数据文件 -->
+<script src="data.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---------- 固定归档信息 ---------- */
+const ARCHIVE_HX = `玩家交流
+https://t.me/SZMMKWDHX
+报告频道（MMK)
+https://t.me/MMKHHRZ
+报告频道（会所沐足）
+https://t.me/GSHSCJRZ
+报告审核员: 
+伪善 @weishan001
+佚名 @XJ9901
+斯泰 @stlmcx007
+
+/* ---------- 初始化航线建议（来自 data.js 的键） ---------- */
+function initRoutes(){
+  const list = $('routeList');
+  Object.keys(REPORT_DATA).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    list.appendChild(opt);
+  });
+}
+
+/* ---------- 航线输入 → 刷新航海员建议（对应被委托人） ---------- */
+$('route').addEventListener('input', () => {
+  const route = $('route').value.trim();
+  const sailorList = $('sailorList');
+  sailorList.innerHTML = '';
+
+  const list = REPORT_DATA[route] || [];
+  list.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    sailorList.appendChild(opt);
+  });
+});
+
+/* ---------- 评分小写 x 自动转大写 X ---------- */
+document.querySelectorAll('input[inputmode="decimal"]').forEach(el => {
+  el.addEventListener('blur', () => {
+    if(el.value.trim().toUpperCase() === 'X'){
+      el.value = 'X';
+    }
+  });
+});
+
+/* ---------- 必填校验表 ---------- */
+const REQUIRED = [
+  { id:'route',   name:'航线' },
+  { id:'sailor',  name:'航海员' },
+  { id:'crew',    name:'船员' },
+  { id:'contact', name:'出海联系' },
+  { id:'shopId',  name:'商家ID' },
+  { id:'fee',     name:'出航经费' },
+  { id:'date',    name:'出海日期' },
+  { id:'crowd',   name:'适合人群' },
+  { id:'times',   name:'返航次数' },
+  { id:'tags',    name:'航海员特点标签' },
+  { id:'pros',    name:'优点' },
+  { id:'cons',    name:'缺点' },
+  { id:'s_face',  name:'颜值',     isScore:true },
+  { id:'s_att',   name:'态度',     isScore:true },
+  { id:'s_top',   name:'上路',     isScore:true },
+  { id:'s_mid',   name:'中路',     isScore:true },
+  { id:'s_all',   name:'综合评分', isScore:true },
+  { id:'journey', name:'航海历程' },
+  { id:'env',     name:'店内环境' }
+];
+
+function validate(){
+  for(const item of REQUIRED){
+    const el = $(item.id);
+    const val = el.value.trim();
+
+    if(!val){
+      showToast(`❌ ${item.name} 不能为空`, true);
+      el.focus();
+      return false;
+    }
+
+    if(item.isScore){
+      // 允许 X
+      if(val.toUpperCase() === 'X') continue;
+
+      const num = Number(val);
+      if(isNaN(num) || num < 0 || num > 10){
+        showToast(`❌ ${item.name} 必须填 0 - 10 或 X`, true);
+        el.focus();
+        el.select();
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/* ---------- 生成报告 ---------- */
+function buildReport(){
+  const route   = $('route').value.trim();
+  const sailor  = $('sailor').value.trim();
+  const crew    = $('crew').value.trim();
+  const contact = $('contact').value.trim();
+  const shopId  = $('shopId').value.trim();
+  const fee     = $('fee').value.trim();
+  const dateRaw = $('date').value;
+  const date    = dateRaw ? dateRaw.replace(/-/g, '/') : '';
+  const crowd   = $('crowd').value.trim();
+  const times   = $('times').value.trim();
+
+  const rawTags = $('tags').value.trim();
+  const tags = rawTags
+    ? rawTags.split(/[\s,，]+/).filter(Boolean)
+        .map(t => t.startsWith('#') ? t : '#' + t).join(' ')
+    : '';
+
+  const pros = $('pros').value.trim();
+  const cons = $('cons').value.trim();
+
+  /* 评分格式化：X 直接输出 X；否则 数值（备注） */
+  const fmt = (numId, noteId) => {
+    const n = $(numId).value.trim();
+    if(n.toUpperCase() === 'X') return 'X';
+    const note = $(noteId).value.trim();
+    return note ? `${n}（${note}）` : n;
+  };
+
+  const face = fmt('s_face', 'n_face');
+  const att  = fmt('s_att',  'n_att');
+  const top  = fmt('s_top',  'n_top');
+  const mid  = fmt('s_mid',  'n_mid');
+  const all  = $('s_all').value.trim();
+
+  const journey = $('journey').value.trim();
+  const env     = $('env').value.trim();
+
+  let out = '';
+  out += `航线： ${route}     航海员：${sailor}\n`;
+  out += `船员\n${crew}\n`;
+  out += `出海联系\n${contact}\n`;
+  out += `商家ID\n${shopId}\n`;
+  out += `出航经费\n${fee}\n`;
+  out += `出海日期\n${date}\n`;
+  out += `适合人群\n${crowd}\n`;
+  out += `返航次数\n${times}\n`;
+  out += `航海员特点：\n`;
+  out += `${tags}\n`;
+  out += `优点：${pros}\n`;
+  out += `缺点：${cons}\n`;
+  out += `评分\n`;
+  out += `颜值：${face}\n`;
+  out += `态度：${att}\n`;
+  out += `上路：${top}\n`;
+  out += `中路：${mid}\n`;
+  out += `综合评分：${all}\n`;
+  out += `（1-5雷 6-8正常 9-10 幻神）\n`;
+  out += `航海历程\n\n${journey}\n\n`;
+  out += `店内环境\n${env}\n\n`;
+  out += ARCHIVE_HX;
+
+  return out;
+}
+
+/* ---------- 解析粘贴的报告，回填表单 ---------- */
+function parseReport(text){
+  if(!text || !text.trim()){
+    showToast('❌ 粘贴内容为空', true);
+    return false;
+  }
+
+  const lines = text.split(/\r?\n/);
+  const T = lines.map(l => l.trim());
+
+  /* 取「某标签」下方第一个非空行 */
+  function after(label){
+    for(let i = 0; i < T.length; i++){
+      if(T[i] === label){
+        for(let j = i + 1; j < T.length; j++){
+          if(T[j]) return T[j];
+        }
+        return '';
+      }
+    }
+    return '';
+  }
+
+  /* 取「标签：值」同行内容 */
+  function inlineAfter(label){
+    for(const t of T){
+      if(t.startsWith(label)) return t.slice(label.length).trim();
+    }
+    return '';
+  }
+
+  /* 解析评分行：8（邻家小妹） 或 X */
+  function score(label){
+    const raw = inlineAfter(label + '：') || inlineAfter(label + ':');
+    if(!raw) return { num:'', note:'' };
+    if(raw.toUpperCase() === 'X') return { num:'X', note:'' };
+    const m = raw.match(/^([\d.]+)\s*[（(]\s*(.*?)\s*[)）]\s*$/);
+    if(m) return { num: m[1], note: m[2] };
+    return { num: raw.replace(/[（(].*$/, '').trim(), note:'' };
+  }
+
+  /* 航线 / 航海员（同一行） */
+  let route = '', sailor = '';
+  for(const t of T){
+    const m = t.match(/^航线\s*[:：]\s*(.+?)\s+航海员\s*[:：]\s*(.+)$/);
+    if(m){ route = m[1].trim(); sailor = m[2].trim(); break; }
+  }
+  if(!route){
+    const m = text.match(/航线\s*[:：]\s*([^\s]+)/);
+    if(m) route = m[1].trim();
+  }
+  if(!sailor){
+    const m = text.match(/航海员\s*[:：]\s*([^\s]+)/);
+    if(m) sailor = m[1].trim();
+  }
+
+  const crew    = after('船员');
+  const contact = after('出海联系');
+  const shopId  = after('商家ID');
+  const fee     = after('出航经费');
+  const dateStr = after('出海日期');
+  const crowd   = after('适合人群');
+  const times   = after('返航次数');
+
+  /* 特点标签 */
+  let tags = '';
+  const tagIdx = T.findIndex(t => t.startsWith('航海员特点'));
+  if(tagIdx !== -1){
+    for(let j = tagIdx + 1; j < T.length; j++){
+      const v = T[j];
+      if(!v) continue;
+      if(v.startsWith('优点') || v.startsWith('缺点') || v === '评分') break;
+      tags = v;
+      break;
+    }
+  }
+
+  const pros = inlineAfter('优点：') || inlineAfter('优点:');
+  const cons = inlineAfter('缺点：') || inlineAfter('缺点:');
+
+  const scFace = score('颜值');
+  const scAtt  = score('态度');
+  const scTop  = score('上路');
+  const scMid  = score('中路');
+  const scAll  = score('综合评分');
+
+  /* 航海历程 / 店内环境 */
+  const jIdx = T.findIndex(t => t.startsWith('航海历程'));
+  const eIdx = T.findIndex(t => t.startsWith('店内环境'));
+
+  let journey = '';
+  if(jIdx !== -1){
+    const end = (eIdx !== -1 && eIdx > jIdx) ? eIdx : T.length;
+    journey = lines.slice(jIdx + 1, end).join('\n').trim();
+  }
+
+  let env = '';
+  if(eIdx !== -1){
+    let end = T.length;
+    for(let i = eIdx + 1; i < T.length; i++){
+      if(T[i].startsWith('玩家交流') ||
+         T[i].startsWith('报告频道') ||
+         T[i].startsWith('报告审核员')){
+        end = i; break;
+      }
+    }
+    env = lines.slice(eIdx + 1, end).join('\n').trim();
+  }
+
+  /* ---- 回填 ---- */
+  if(route){
+    $('route').value = route;
+    $('route').dispatchEvent(new Event('input'));  // 触发航海员列表更新
+  }
+  if(sailor){
+    $('sailor').value = sailor;
+  }
+
+  $('crew').value    = crew;
+  $('contact').value = contact;
+  $('shopId').value  = shopId;
+  $('fee').value     = fee;
+  if(dateStr) $('date').value = dateStr.replace(/[\/.]/g, '-');
+  $('crowd').value   = crowd;
+  $('times').value   = times;
+  $('tags').value    = tags;
+  $('pros').value    = pros;
+  $('cons').value    = cons;
+
+  $('s_face').value = scFace.num; $('n_face').value = scFace.note;
+  $('s_att').value  = scAtt.num;  $('n_att').value  = scAtt.note;
+  $('s_top').value  = scTop.num;  $('n_top').value  = scTop.note;
+  $('s_mid').value  = scMid.num;  $('n_mid').value  = scMid.note;
+  $('s_all').value  = scAll.num;
+
+  // 统一 X 为大写
+  ['s_face','s_att','s_top','s_mid','s_all'].forEach(id => {
+    const v = $(id).value.trim();
+    if(v.toUpperCase() === 'X') $(id).value = 'X';
+  });
+
+  $('journey').value = journey;
+  $('env').value     = env;
+
+  showToast('✅ 已解析并填充表单');
+  return true;
+}
+
+/* ---------- 按钮事件 ---------- */
+
+$('parseBtn').addEventListener('click', () => {
+  parseReport($('pasteInput').value);
+});
+
+$('clearPasteBtn').addEventListener('click', () => {
+  $('pasteInput').value = '';
+});
+
+$('genBtn').addEventListener('click', () => {
+  if(!validate()) return;
+  const p = $('preview');
+  p.classList.remove('placeholder');
+  p.textContent = buildReport();
+  p.scrollIntoView({behavior:'smooth', block:'nearest'});
+});
+
+$('copyBtn').addEventListener('click', async () => {
+  if(!validate()) return;
+  const text = buildReport();
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast('已复制到剪贴板 ✓');
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('已复制到剪贴板 ✓');
+  }
+});
+
+$('resetBtn').addEventListener('click', () => {
+  document.querySelectorAll('input,textarea').forEach(el => {
+    if(el.disabled) return;
+    el.value = '';
+  });
+  $('sailorList').innerHTML = '';
+  const p = $('preview');
+  p.classList.add('placeholder');
+  p.textContent = '点击「生成报告」后，最终内容会显示在这里。';
+});
+
+/* ---------- Toast ---------- */
+function showToast(msg, isError = false){
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#ef4444' : 'var(--accent2)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ---------- 启动 ---------- */
+initRoutes();
+</script>
+</body>
+</html>

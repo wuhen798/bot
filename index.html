@@ -17,7 +17,17 @@
   }
   .wrap{max-width:760px; margin:0 auto;}
   h1{font-size:20px; text-align:center; margin:8px 0 4px;}
-  .tip{text-align:center; color:var(--sub); font-size:13px; margin-bottom:16px;}
+  .tip{text-align:center; color:var(--sub); font-size:13px; margin-bottom:12px;}
+
+  /* 模板切换 */
+  .switch{display:flex; gap:8px; justify-content:center; margin-bottom:18px; flex-wrap:wrap;}
+  .switch a{
+    padding:7px 18px; border-radius:999px; font-size:13px; text-decoration:none;
+    border:1px solid var(--line); color:var(--sub); background:var(--card);
+    transition:.2s;
+  }
+  .switch a:hover{color:var(--text); border-color:var(--accent);}
+  .switch a.active{background:var(--accent); color:#fff; border-color:var(--accent);}
 
   /* 粘贴解析区 */
   .paste-box{
@@ -89,9 +99,16 @@
   <h1>深圳MMK万事屋の委托报告</h1>
   <div class="tip">填写信息 → 点击生成 → 复制到 Telegram</div>
 
+  <!-- 模板切换 -->
+  <div class="switch">
+    <a href="index.html" class="active">🚢 委托报告</a>
+    <a href="hangxian.html">⛵ 航线报告</a>
+    <a href="zhentan.html">🔍 侦探报告</a>
+  </div>
+
   <!-- 粘贴解析区 -->
   <div class="paste-box">
-    <label>📥 粘贴已有报告，自动填充下方表单</label>
+    <label>📥 粘贴已有委托报告，自动填充下方表单</label>
     <textarea id="pasteInput" placeholder="把完整的委托报告粘贴到这里，然后点「解析填充」"></textarea>
     <div class="paste-btns">
       <button id="parseBtn">解析填充</button>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深圳MMK万事屋 · 报告生成中心</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --line:#262b36;
+    --text:#e6e8ee; --sub:#9aa3b2; --accent:#4f8cff; --accent2:#22c55e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6; padding:16px;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .wrap{max-width:760px; width:100%;}
+
+  h1{
+    font-size:22px; text-align:center; margin:8px 0 4px;
+    background:linear-gradient(90deg,#4f8cff,#22c55e);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tip{text-align:center; color:var(--sub); font-size:13px; margin-bottom:26px;}
+
+  /* 导航卡片 */
+  .cards{display:flex; flex-direction:column; gap:14px;}
+  .card{
+    display:flex; align-items:center; gap:16px;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:18px 20px;
+    text-decoration:none; color:var(--text);
+    transition:transform .18s, border-color .18s, background .18s;
+    position:relative; overflow:hidden;
+  }
+  .card::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--accent); opacity:0; transition:opacity .18s;
+  }
+  .card:hover{transform:translateY(-2px); border-color:var(--accent);}
+  .card:hover::before{opacity:1;}
+
+  .card .icon{
+    flex:0 0 52px; height:52px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; background:#0d0f14; border:1px solid var(--line);
+  }
+  .card .info{flex:1; min-width:0;}
+  .card .info .name{font-size:16px; font-weight:600; margin-bottom:3px;}
+  .card .info .desc{font-size:12.5px; color:var(--sub);}
+  .card .arrow{color:var(--sub); font-size:18px; transition:transform .18s, color .18s;}
+  .card:hover .arrow{transform:translateX(4px); color:var(--accent);}
+
+  /* 每个卡片的强调色 */
+  .card.wt::before{background:#4f8cff;}
+  .card.hx::before{background:#22c55e;}
+  .card.zt::before{background:#f59e0b;}
+
+  /* 页脚 */
+  .footer{
+    margin-top:28px; text-align:center; font-size:12px; color:var(--sub);
+    line-height:1.9;
+  }
+  .footer a{color:var(--sub); text-decoration:none;}
+  .footer a:hover{color:var(--text);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>深圳MMK万事屋 · 报告生成中心</h1>
+  <div class="tip">选择要生成的报告类型 👇</div>
+
+  <div class="cards">
+    <a class="card wt" href="index.html">
+      <div class="icon">🚢</div>
+      <div class="info">
+        <div class="name">委托报告</div>
+        <div class="desc">万事屋委托报告 · 记录委托经过与服务体验</div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="card hx" href="hangxian.html">
+      <div class="icon">⛵</div>
+      <div class="info">
+        <div class="name">航线报告</div>
+        <div class="desc">深圳MMK伟大航线の航线报告 · 航海历程与评分</div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="card zt" href="zhentan.html">
+      <div class="icon">🔍</div>
+      <div class="info">
+        <div class="name">侦探报告</div>
+        <div class="desc">深圳MMK侦探事务所の侦探报告 · 案件与详细体验</div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    深圳MMK · 报告生成中心<br>
+    点击卡片进入对应报告生成器，三个页面可互相切换；<br>
+    如需新增哪个群的报告模板可私聊该机器人，或者发现有任何人用我的机器人盈利等行为私聊我进行举报，一经发现拉黑并回收机器人使用权限。
+  </div>
+</div>
+</body>
+</html>
