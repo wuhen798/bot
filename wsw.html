@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深圳MMK万事屋の委托报告生成器</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --line:#262b36;
+    --text:#e6e8ee; --sub:#9aa3b2; --accent:#4f8cff; --accent2:#22c55e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6; padding:16px;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+  h1{font-size:20px; text-align:center; margin:8px 0 4px;}
+  .tip{text-align:center; color:var(--sub); font-size:13px; margin-bottom:12px;}
+
+  /* 模板切换 */
+  .switch{display:flex; gap:8px; justify-content:center; margin-bottom:18px; flex-wrap:wrap;}
+  .switch a{
+    padding:7px 18px; border-radius:999px; font-size:13px; text-decoration:none;
+    border:1px solid var(--line); color:var(--sub); background:var(--card);
+    transition:.2s;
+  }
+  .switch a:hover{color:var(--text); border-color:var(--accent);}
+  .switch a.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+
+  /* 粘贴解析区 */
+  .paste-box{
+    background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:16px; margin-bottom:20px;
+  }
+  .paste-box label{
+    display:block; font-size:13px; color:var(--accent);
+    font-weight:600; margin-bottom:8px;
+  }
+  #pasteInput{
+    width:100%; min-height:120px; resize:vertical;
+    background:#0d0f14; color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:10px 12px; font-size:13px;
+    font-family:"PingFang SC","Microsoft YaHei",monospace; outline:none;
+  }
+  #pasteInput:focus{border-color:var(--accent);}
+  .paste-btns{display:flex; gap:12px; margin-top:10px;}
+  .paste-btns button{
+    flex:1; padding:10px; border-radius:8px; border:none;
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  #parseBtn{background:var(--accent); color:#fff;}
+  #clearPasteBtn{background:#2a2f3a; color:var(--text);}
+
+  fieldset{
+    border:1px solid var(--line); border-radius:12px;
+    padding:16px; margin:0 0 16px; background:var(--card);
+  }
+  legend{padding:0 8px; font-size:14px; color:var(--accent); font-weight:600;}
+  label{display:block; font-size:13px; color:var(--sub); margin:12px 0 6px;}
+  label:first-of-type{margin-top:0;}
+  .req{color:#ff6b6b;}
+  input,textarea,select{
+    width:100%; padding:10px 12px; border-radius:8px;
+    border:1px solid var(--line); background:#0d0f14; color:var(--text);
+    font-size:14px; font-family:inherit; outline:none;
+  }
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+  textarea{resize:vertical; min-height:80px;}
+  .row{display:flex; gap:12px;}
+  .row > div{flex:1;}
+  .btns{display:flex; gap:12px; margin:20px 0;}
+  button{
+    flex:1; padding:12px; border-radius:10px; border:none;
+    font-size:15px; font-weight:600; cursor:pointer;
+  }
+  #genBtn{background:var(--accent); color:#fff;}
+  #copyBtn{background:var(--accent2); color:#fff;}
+  #resetBtn{background:#2a2f3a; color:var(--text);}
+  #preview{
+    white-space:pre-wrap; word-break:break-word;
+    background:#0d0f14; border:1px solid var(--line); border-radius:12px;
+    padding:16px; font-size:14px; line-height:1.8; min-height:120px;
+    font-family:"PingFang SC","Microsoft YaHei",monospace;
+  }
+  .placeholder{color:var(--sub);}
+  .toast{
+    position:fixed; left:50%; bottom:30px; transform:translateX(-50%);
+    background:var(--accent2); color:#fff; padding:10px 20px;
+    border-radius:8px; font-size:14px; opacity:0; pointer-events:none;
+    transition:opacity .25s; z-index:99;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>深圳MMK万事屋の委托报告</h1>
+  <div class="tip">填写信息 → 点击生成 → 复制到 Telegram</div>
+
+  <!-- 模板切换 -->
+  <div class="switch">
+    <a href="wsw.html" class="active">🚢 委托报告</a>
+    <a href="hangxian.html">⛵ 航线报告</a>
+    <a href="zhentan.html">🔍 侦探报告</a>
+  </div>
+
+  <!-- 粘贴解析区 -->
+  <div class="paste-box">
+    <label>📥 粘贴已有委托报告，自动填充下方表单</label>
+    <textarea id="pasteInput" placeholder="把完整的委托报告粘贴到这里，然后点「解析填充」"></textarea>
+    <div class="paste-btns">
+      <button id="parseBtn">解析填充</button>
+      <button id="clearPasteBtn">清空粘贴区</button>
+    </div>
+  </div>
+
+  <!-- 基本信息 -->
+  <fieldset>
+    <legend>基本信息</legend>
+
+    <label>#委托发生地 <span class="req">*</span></label>
+    <input id="place" list="placeList" placeholder="请选择或输入委托发生地">
+    <datalist id="placeList"></datalist>
+
+    <label>#被委托人 <span class="req">*</span></label>
+    <input id="target" list="targetList" placeholder="请选择或输入被委托人">
+    <datalist id="targetList"></datalist>
+
+    <label>#联系方式 <span class="req">*</span></label>
+    <input id="contact" placeholder="输入客服联系方式：如@bujidaotoutou">
+
+    <label>#委托人 <span class="req">*</span></label>
+    <input id="client" placeholder="例如：XX">
+
+    <label>#委托日期 <span class="req">*</span></label>
+    <input id="date" type="date">
+
+    <label>#委托报酬 <span class="req">*</span></label>
+    <input id="fee" placeholder="例如：599-100；填写实际优惠">
+  </fieldset>
+
+  <!-- 被委托人特征 -->
+  <fieldset>
+    <legend>被委托人特征</legend>
+
+    <label>标签（空格或逗号分隔，自动加 #） <span class="req">*</span></label>
+    <input id="tags" placeholder="大蟒蛇 颜值高 身材好 情绪价值高">
+
+    <label>#身材 <span class="req">*</span></label>
+    <textarea id="body" placeholder="例如：身高165，体型匀称……"></textarea>
+
+    <label>#性格 <span class="req">*</span></label>
+    <textarea id="char" placeholder="例如：温柔健谈，主动不冷场……"></textarea>
+  </fieldset>
+
+  <!-- 评分 -->
+  <fieldset>
+    <legend>评分（填 0 - 10，或填 X 表示不适用）</legend>
+
+    <div class="row">
+      <div>
+        <label>#人照一致度 <span class="req">*</span></label>
+        <input id="s_look" type="text" inputmode="decimal" placeholder="0-10 或 X">
+      </div>
+      <div>
+        <label>#颜值 <span class="req">*</span></label>
+        <input id="s_face" type="text" inputmode="decimal" placeholder="0-10 或 X">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>#上路评分 <span class="req">*</span></label>
+        <input id="s_top" type="text" inputmode="decimal" placeholder="0-10 或 X">
+      </div>
+      <div>
+        <label>#中路评分 <span class="req">*</span></label>
+        <input id="s_mid" type="text" inputmode="decimal" placeholder="0-10 或 X">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>#情绪价值评分 <span class="req">*</span></label>
+        <input id="s_emo" type="text" inputmode="decimal" placeholder="0-10 或 X">
+      </div>
+      <div>
+        <label>#综合评分 <span class="req">*</span></label>
+        <input id="s_all" type="text" inputmode="decimal" placeholder="0-10 或 X">
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- 正文 -->
+  <fieldset>
+    <legend>正文</legend>
+
+    <label>委托经过 <span class="req">*</span></label>
+    <textarea id="process" placeholder="服务过程 &amp; 服务体验……（不得写超课表内容！）"></textarea>
+
+    <label>委托总结 <span class="req">*</span></label>
+    <textarea id="summary" placeholder="总体评价 / 服务特色 / 待提升点 / 个人感想……"></textarea>
+  </fieldset>
+
+  <div class="btns">
+    <button id="genBtn">生成报告</button>
+    <button id="copyBtn">复制报告</button>
+    <button id="resetBtn">清空</button>
+  </div>
+
+  <!-- 预览 -->
+  <fieldset>
+    <legend>报告预览</legend>
+    <div id="preview" class="placeholder">点击「生成报告」后，最终内容会显示在这里。</div>
+  </fieldset>
+</div>
+
+<div class="toast" id="toast">已复制到剪贴板 ✓</div>
+
+<!-- 先加载数据文件 -->
+<script src="data.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---------- 初始化地点建议 ---------- */
+function initPlaces(){
+  const list = $('placeList');
+  Object.keys(REPORT_DATA).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    list.appendChild(opt);
+  });
+}
+
+/* ---------- 地点输入 → 刷新被委托人建议 ---------- */
+$('place').addEventListener('input', () => {
+  const place = $('place').value.trim();
+  const targetList = $('targetList');
+  targetList.innerHTML = '';
+
+  const list = REPORT_DATA[place] || [];
+  list.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    targetList.appendChild(opt);
+  });
+});
+
+/* ---------- 评分小写 x 自动转大写 X ---------- */
+document.querySelectorAll('input[inputmode="decimal"]').forEach(el => {
+  el.addEventListener('blur', () => {
+    if(el.value.trim().toUpperCase() === 'X'){
+      el.value = 'X';
+    }
+  });
+});
+
+/* ---------- 通用必填校验 ---------- */
+const REQUIRED = [
+  { id: 'place',   name: '#委托发生地' },
+  { id: 'target',  name: '#被委托人'   },
+  { id: 'contact', name: '#联系方式'   },
+  { id: 'client',  name: '#委托人'     },
+  { id: 'date',    name: '#委托日期'   },
+  { id: 'fee',     name: '#委托报酬'   },
+  { id: 's_look',  name: '#人照一致度', isScore: true },
+  { id: 's_face',  name: '#颜值',       isScore: true },
+  { id: 's_top',   name: '#上路评分',   isScore: true },
+  { id: 's_mid',   name: '#中路评分',   isScore: true },
+  { id: 's_emo',   name: '#情绪价值评分', isScore: true },
+  { id: 's_all',   name: '#综合评分',   isScore: true },
+  { id: 'tags',    name: '被委托人特征' },
+  { id: 'body',    name: '#身材' },
+  { id: 'char',    name: '#性格' },
+  { id: 'process', name: '委托经过' },
+  { id: 'summary', name: '委托总结' }
+];
+
+function validate(){
+  for(const item of REQUIRED){
+    const el = $(item.id);
+    const val = el.value.trim();
+
+    if(!val){
+      showToast(`❌ ${item.name} 不能为空`, true);
+      el.focus();
+      return false;
+    }
+
+    if(item.isScore){
+      // 允许 X
+      if(val.toUpperCase() === 'X') continue;
+
+      const num = Number(val);
+      if(isNaN(num) || num < 0 || num > 10){
+        showToast(`❌ ${item.name} 必须填 0 - 10 或 X`, true);
+        el.focus();
+        el.select();
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/* ---------- 生成报告 ---------- */
+function buildReport(){
+  const place   = $('place').value.trim();
+  const target  = $('target').value.trim();
+  const contact = $('contact').value.trim();
+  const client  = $('client').value.trim();
+  const date    = $('date').value;
+  const fee     = $('fee').value.trim();
+
+  const rawTags = $('tags').value.trim();
+  const tags = rawTags
+    ? rawTags.split(/[\s,，]+/).filter(Boolean)
+        .map(t => t.startsWith('#') ? t : '#' + t).join(' ')
+    : '';
+
+  const body = $('body').value.trim();
+  const char = $('char').value.trim();
+
+  const sLook = $('s_look').value.trim();
+  const sFace = $('s_face').value.trim();
+  const sTop  = $('s_top').value.trim();
+  const sMid  = $('s_mid').value.trim();
+  const sEmo  = $('s_emo').value.trim();
+  const sAll  = $('s_all').value.trim();
+
+  const process = $('process').value.trim();
+  const summary = $('summary').value.trim();
+
+  let out = '';
+  out += `深圳MMK万事屋の委托报告\n`;
+  out += `#委托发生地 #${place}\n`;
+  out += `#被委托人 #${target}\n`;
+  out += `#联系方式 ${contact}\n`;
+  out += `#委托人 ${client}\n`;
+  out += `#委托日期 ${date}\n`;
+  out += `#委托报酬 ${fee}\n`;
+  out += `#被委托人特征\n`;
+  if(tags) out += `${tags}\n`;
+  out += `#人照一致度 ${sLook}\n`;
+  out += `#颜值 ${sFace}\n`;
+  out += `#身材 ${body}\n`;
+  out += `#性格 ${char}\n`;
+  out += `#上路评分 ${sTop}\n`;
+  out += `#中路评分 ${sMid}\n`;
+  out += `#情绪价值评分 ${sEmo}\n`;
+  out += `#综合评分 ${sAll}\n`;
+  out += `委托经过：\n${process}\n\n`;
+  out += `委托总结：\n${summary}\n\n`;
+  out += ARCHIVE;
+
+  return out;
+}
+
+/* ---------- 解析粘贴的报告，回填表单 ---------- */
+function parseReport(text){
+  if(!text || !text.trim()){
+    showToast('❌ 粘贴内容为空', true);
+    return false;
+  }
+
+  const lines = text.split(/\r?\n/);
+
+  function findLine(prefix){
+    for(const line of lines){
+      const t = line.trim();
+      if(t.startsWith(prefix)){
+        return t.slice(prefix.length).trim();
+      }
+    }
+    return '';
+  }
+
+  let place = findLine('#委托发生地');
+  place = place.replace(/^#/, '').trim();
+
+  let target = findLine('#被委托人');
+  target = target.replace(/^#/, '').trim();
+
+  const contact = findLine('#联系方式');
+  const client  = findLine('#委托人');
+  const date    = findLine('#委托日期');
+  const fee     = findLine('#委托报酬');
+
+  // 标签：在 #被委托人特征 下一行
+  let tags = '';
+  for(let i = 0; i < lines.length; i++){
+    if(lines[i].trim() === '#被委托人特征'){
+      if(lines[i+1] && lines[i+1].trim().startsWith('#')){
+        tags = lines[i+1].trim();
+      }
+      break;
+    }
+  }
+
+  const sLook = findLine('#人照一致度');
+  const sFace = findLine('#颜值');
+  const sTop  = findLine('#上路评分');
+  const sMid  = findLine('#中路评分');
+  const sEmo  = findLine('#情绪价值评分');
+  const sAll  = findLine('#综合评分');
+
+  const body = findLine('#身材');
+  const char = findLine('#性格');
+
+  // 委托经过
+  let process = '';
+  const pIdx = lines.findIndex(l => l.trim() === '委托经过：');
+  const sIdx = lines.findIndex(l => l.trim() === '委托总结：');
+  if(pIdx !== -1){
+    const end = sIdx !== -1 ? sIdx : lines.length;
+    process = lines.slice(pIdx + 1, end).join('\n').trim();
+  }
+
+  // 委托总结
+  let summary = '';
+  if(sIdx !== -1){
+    let end = lines.length;
+    for(let i = sIdx + 1; i < lines.length; i++){
+      if(lines[i].includes('委托报告归档信息')){ end = i; break; }
+    }
+    summary = lines.slice(sIdx + 1, end).join('\n').trim();
+  }
+
+  /* 回填 */
+  if(place){
+    $('place').value = place;
+    $('place').dispatchEvent(new Event('input'));
+  }
+  if(target){
+    $('target').value = target;
+  }
+
+  $('contact').value = contact;
+  $('client').value  = client;
+  $('date').value    = date;
+  $('fee').value     = fee;
+  $('tags').value    = tags;
+  $('body').value    = body === '（文字表述）' ? '' : body;
+  $('char').value    = char === '（文字表述）' ? '' : char;
+
+  $('s_look').value = sLook;
+  $('s_face').value = sFace;
+  $('s_top').value  = sTop;
+  $('s_mid').value  = sMid;
+  $('s_emo').value  = sEmo;
+  $('s_all').value  = sAll;
+
+  $('process').value = process;
+  $('summary').value = summary;
+
+  showToast('✅ 已解析并填充表单');
+  return true;
+}
+
+/* ---------- 按钮事件 ---------- */
+
+$('parseBtn').addEventListener('click', () => {
+  parseReport($('pasteInput').value);
+});
+
+$('clearPasteBtn').addEventListener('click', () => {
+  $('pasteInput').value = '';
+});
+
+$('genBtn').addEventListener('click', () => {
+  if(!validate()) return;
+  const p = $('preview');
+  p.classList.remove('placeholder');
+  p.textContent = buildReport();
+  p.scrollIntoView({behavior:'smooth', block:'nearest'});
+});
+
+$('copyBtn').addEventListener('click', async () => {
+  if(!validate()) return;
+  const text = buildReport();
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast('已复制到剪贴板 ✓');
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('已复制到剪贴板 ✓');
+  }
+});
+
+$('resetBtn').addEventListener('click', () => {
+  document.querySelectorAll('input,textarea').forEach(el => {
+    el.value = '';
+  });
+  $('targetList').innerHTML = '';
+  const p = $('preview');
+  p.classList.add('placeholder');
+  p.textContent = '点击「生成报告」后，最终内容会显示在这里。';
+});
+
+/* ---------- Toast ---------- */
+function showToast(msg, isError = false){
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#ef4444' : 'var(--accent2)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ---------- 启动 ---------- */
+initPlaces();
+</script>
+</body>
+</html>
