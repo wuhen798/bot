@@ -85,6 +85,21 @@
     font-family:"PingFang SC","Microsoft YaHei",monospace;
   }
   .placeholder{color:var(--sub);}
+
+  /* 报告机器人跳转按钮 */
+  .bot-link{
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; margin:14px 0 0; padding:13px 16px; border-radius:10px;
+    background:linear-gradient(135deg,#229ED9,#4f8cff);
+    color:#fff; text-decoration:none; text-align:center;
+    box-shadow:0 6px 18px rgba(79,140,255,.25);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .bot-link.show{display:flex;}
+  .bot-link:hover{transform:translateY(-1px); box-shadow:0 9px 24px rgba(79,140,255,.4);}
+  .bot-link .t{font-size:15px; font-weight:700;}
+  .bot-link .hint{font-size:12px; font-weight:400; opacity:.88;}
+
   .toast{
     position:fixed; left:50%; bottom:30px; transform:translateX(-50%);
     background:var(--accent2); color:#fff; padding:10px 20px;
@@ -211,9 +226,15 @@
   </div>
 
   <!-- 预览 -->
-  <fieldset>
+  <fieldset id="previewField">
     <legend>报告预览</legend>
     <div id="preview" class="placeholder">点击「生成报告」后，最终内容会显示在这里。</div>
+
+    <!-- 报告机器人跳转（生成/复制后出现） -->
+    <a id="botLink" class="bot-link" href="https://t.me/luojin798_bot" target="_blank" rel="noopener noreferrer">
+      <span class="t">🤖 跳转到报告机器人 @luojin798_bot</span>
+      <span class="hint">先点「复制报告」，再打开机器人粘贴发送</span>
+    </a>
   </fieldset>
 </div>
 
@@ -459,6 +480,11 @@ function parseReport(text){
   return true;
 }
 
+/* ---------- 报告机器人跳转按钮 ---------- */
+function showBotLink(){
+  $('botLink').classList.add('show');
+}
+
 /* ---------- 按钮事件 ---------- */
 
 $('parseBtn').addEventListener('click', () => {
@@ -474,7 +500,9 @@ $('genBtn').addEventListener('click', () => {
   const p = $('preview');
   p.classList.remove('placeholder');
   p.textContent = buildReport();
-  p.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  showBotLink();                       // ← 生成后出现机器人跳转入口
+  $('previewField').scrollIntoView({behavior:'smooth', block:'nearest'});
 });
 
 $('copyBtn').addEventListener('click', async () => {
@@ -491,6 +519,7 @@ $('copyBtn').addEventListener('click', async () => {
     document.body.removeChild(ta);
     showToast('已复制到剪贴板 ✓');
   }
+  showBotLink();                       // ← 复制后同样出现跳转入口
 });
 
 $('resetBtn').addEventListener('click', () => {
@@ -501,6 +530,7 @@ $('resetBtn').addEventListener('click', () => {
   const p = $('preview');
   p.classList.add('placeholder');
   p.textContent = '点击「生成报告」后，最终内容会显示在这里。';
+  $('botLink').classList.remove('show');   // ← 清空时隐藏机器人入口
 });
 
 /* ---------- Toast ---------- */
