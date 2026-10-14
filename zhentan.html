@@ -77,7 +77,6 @@
     font-size:15px; font-weight:600; cursor:pointer;
   }
   #genBtn{background:var(--accent); color:#fff;}
-  #copyBtn{background:var(--accent2); color:#fff;}
   #resetBtn{background:#2a2f3a; color:var(--text);}
   #preview{
     white-space:pre-wrap; word-break:break-word;
@@ -218,7 +217,6 @@
 
   <div class="btns">
     <button id="genBtn">生成报告</button>
-    <button id="copyBtn">复制报告</button>
     <button id="resetBtn">清空</button>
   </div>
 
@@ -503,14 +501,6 @@ $('genBtn').addEventListener('click', () => {
   $('copyAndJumpBtn').style.display = 'block';
 
   $('previewField').scrollIntoView({behavior:'smooth', block:'nearest'});
-});
-
-/* 复制报告（仅复制，不跳转） */
-$('copyBtn').addEventListener('click', async () => {
-  if(!validate()) return;
-  const text = buildReport();
-  await copyTextToClipboard(text);
-  showToast('已复制到剪贴板 ✓');
 });
 
 /* 复制并跳转到报告机器人 */
