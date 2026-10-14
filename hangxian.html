@@ -459,6 +459,31 @@ function parseReport(text){
     return { num: raw.replace(/[（(].*$/, '').trim(), note:'' };
   }
 
+  /* ---- 固定归档区识别（容错：允许行首有 emoji / 空格 / 零宽字符） ---- */
+  const ARCHIVE_RE = /(玩家交流|报告频道|报告审核员)/;
+  const isArchiveLine = t => ARCHIVE_RE.test(t) || /t\.me\//i.test(t);
+
+  /* 通用段落提取：从 label 行往下取，遇到归档行或 stopLabels 停止 */
+  function section(label, stopLabels = []){
+    const start = T.findIndex(t => t.startsWith(label));
+    if(start === -1) return '';
+
+    let end = T.length;
+    for(let i = start + 1; i < T.length; i++){
+      const t = T[i];
+      if(!t) continue;
+      if(isArchiveLine(t) || stopLabels.some(l => t.startsWith(l))){
+        end = i; break;
+      }
+    }
+    return lines.slice(start + 1, end).join('\n').trim();
+  }
+
+  /* 兜底：万一还是混进了归档区，从第一个归档关键词处整段切掉 */
+  function stripArchive(s){
+    return s.replace(/(^|\n)[^\n]*(玩家交流|报告频道|报告审核员)[\s\S]*$/, '').trim();
+  }
+
   /* 航线 / 航海员（同一行） */
   let route = '', sailor = '';
   for(const t of T){
@@ -504,27 +529,8 @@ function parseReport(text){
   const scAll  = score('综合评分');
 
   /* 航海历程 / 店内环境 */
-  const jIdx = T.findIndex(t => t.startsWith('航海历程'));
-  const eIdx = T.findIndex(t => t.startsWith('店内环境'));
-
-  let journey = '';
-  if(jIdx !== -1){
-    const end = (eIdx !== -1 && eIdx > jIdx) ? eIdx : T.length;
-    journey = lines.slice(jIdx + 1, end).join('\n').trim();
-  }
-
-  let env = '';
-  if(eIdx !== -1){
-    let end = T.length;
-    for(let i = eIdx + 1; i < T.length; i++){
-      if(T[i].startsWith('玩家交流') ||
-         T[i].startsWith('报告频道') ||
-         T[i].startsWith('报告审核员')){
-        end = i; break;
-      }
-    }
-    env = lines.slice(eIdx + 1, end).join('\n').trim();
-  }
+  const journey = stripArchive(section('航海历程', ['店内环境']));
+  const env     = stripArchive(section('店内环境', []));
 
   /* ---- 回填 ---- */
   if(route){
