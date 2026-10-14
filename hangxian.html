@@ -147,9 +147,6 @@
     <label>出海联系 <span class="req">*</span></label>
     <input id="contact" placeholder="例如：@bujidaotoutou">
 
-    <label>商家ID <span class="req">*</span></label>
-    <input id="shopId" placeholder="商家ID">
-
     <div class="row">
       <div>
         <label>出航经费 <span class="req">*</span></label>
@@ -273,7 +270,7 @@ https://t.me/GSHSCJRZ
 报告审核员: 
 伪善 @weishan001
 佚名 @XJ9901
-斯泰 @stlmcx007
+斯泰 @stlmcx007`;
 
 /* ---------- 初始化航线建议（来自 data.js 的键） ---------- */
 function initRoutes(){
@@ -314,7 +311,6 @@ const REQUIRED = [
   { id:'sailor',  name:'航海员' },
   { id:'crew',    name:'船员' },
   { id:'contact', name:'出海联系' },
-  { id:'shopId',  name:'商家ID' },
   { id:'fee',     name:'出航经费' },
   { id:'date',    name:'出海日期' },
   { id:'crowd',   name:'适合人群' },
@@ -364,7 +360,6 @@ function buildReport(){
   const sailor  = $('sailor').value.trim();
   const crew    = $('crew').value.trim();
   const contact = $('contact').value.trim();
-  const shopId  = $('shopId').value.trim();
   const fee     = $('fee').value.trim();
   const dateRaw = $('date').value;
   const date    = dateRaw ? dateRaw.replace(/-/g, '/') : '';
@@ -401,7 +396,6 @@ function buildReport(){
   out += `航线： ${route}     航海员：${sailor}\n`;
   out += `船员\n${crew}\n`;
   out += `出海联系\n${contact}\n`;
-  out += `商家ID\n${shopId}\n`;
   out += `出航经费\n${fee}\n`;
   out += `出海日期\n${date}\n`;
   out += `适合人群\n${crowd}\n`;
@@ -482,7 +476,6 @@ function parseReport(text){
 
   const crew    = after('船员');
   const contact = after('出海联系');
-  const shopId  = after('商家ID');
   const fee     = after('出航经费');
   const dateStr = after('出海日期');
   const crowd   = after('适合人群');
@@ -544,7 +537,6 @@ function parseReport(text){
 
   $('crew').value    = crew;
   $('contact').value = contact;
-  $('shopId').value  = shopId;
   $('fee').value     = fee;
   if(dateStr) $('date').value = dateStr.replace(/[\/.]/g, '-');
   $('crowd').value   = crowd;
