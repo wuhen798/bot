@@ -86,6 +86,21 @@
     font-family:"PingFang SC","Microsoft YaHei",monospace;
   }
   .placeholder{color:var(--sub);}
+
+  /* 复制并跳转机器人按钮 */
+  #copyAndJumpBtn{
+    display:none; width:100%; margin-top:14px; padding:14px;
+    border-radius:10px; border:none;
+    background:linear-gradient(135deg,#229ED9,#4f8cff);
+    color:#fff; font-size:15px; font-weight:700; cursor:pointer;
+    box-shadow:0 6px 18px rgba(79,140,255,.25);
+    transition:transform .15s, box-shadow .15s;
+  }
+  #copyAndJumpBtn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 9px 24px rgba(79,140,255,.4);
+  }
+
   .toast{
     position:fixed; left:50%; bottom:30px; transform:translateX(-50%);
     background:var(--accent2); color:#fff; padding:10px 20px;
@@ -208,9 +223,12 @@
   </div>
 
   <!-- 预览 -->
-  <fieldset>
+  <fieldset id="previewField">
     <legend>报告预览</legend>
     <div id="preview" class="placeholder">点击「生成报告」后，最终内容会显示在这里。</div>
+
+    <!-- 生成后出现的复制并跳转按钮 -->
+    <button id="copyAndJumpBtn">📋 复制并跳转到报告机器人 @lioyd_bannings_bot</button>
   </fieldset>
 </div>
 
@@ -220,6 +238,7 @@
 <script src="data.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+const BOT_URL = 'https://t.me/lioyd_bannings_bot';
 
 /* ---------- 固定归档信息 ---------- */
 const ARCHIVE_ZT = `报告审核: @limanman886  @bayesprism 
@@ -445,6 +464,24 @@ function parseReport(text){
   return true;
 }
 
+/* ---------- 复制到剪贴板（通用） ---------- */
+async function copyTextToClipboard(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    return true;
+  }
+}
+
 /* ---------- 按钮事件 ---------- */
 
 $('parseBtn').addEventListener('click', () => {
@@ -455,30 +492,39 @@ $('clearPasteBtn').addEventListener('click', () => {
   $('pasteInput').value = '';
 });
 
+/* 生成报告 */
 $('genBtn').addEventListener('click', () => {
   if(!validate()) return;
   const p = $('preview');
   p.classList.remove('placeholder');
   p.textContent = buildReport();
-  p.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  // 显示「复制并跳转」按钮
+  $('copyAndJumpBtn').style.display = 'block';
+
+  $('previewField').scrollIntoView({behavior:'smooth', block:'nearest'});
 });
 
+/* 复制报告（仅复制，不跳转） */
 $('copyBtn').addEventListener('click', async () => {
   if(!validate()) return;
   const text = buildReport();
-  try{
-    await navigator.clipboard.writeText(text);
-    showToast('已复制到剪贴板 ✓');
-  }catch(e){
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('已复制到剪贴板 ✓');
-  }
+  await copyTextToClipboard(text);
+  showToast('已复制到剪贴板 ✓');
 });
 
+/* 复制并跳转到报告机器人 */
+$('copyAndJumpBtn').addEventListener('click', async () => {
+  if(!validate()) return;
+  const text = buildReport();
+
+  await copyTextToClipboard(text);
+  showToast('已复制 ✓ 正在跳转机器人…');
+
+  window.open(BOT_URL, '_blank');
+});
+
+/* 清空表单和预览 */
 $('resetBtn').addEventListener('click', () => {
   document.querySelectorAll('input,textarea').forEach(el => {
     if(el.disabled) return;
@@ -488,6 +534,7 @@ $('resetBtn').addEventListener('click', () => {
   const p = $('preview');
   p.classList.add('placeholder');
   p.textContent = '点击「生成报告」后，最终内容会显示在这里。';
+  $('copyAndJumpBtn').style.display = 'none';
 });
 
 /* ---------- Toast ---------- */
