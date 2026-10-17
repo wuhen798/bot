@@ -238,6 +238,9 @@
 const $ = id => document.getElementById(id);
 const BOT_URL = 'https://t.me/lioyd_bannings_bot';
 
+/* ---------- 案件发生地 → 店家联系方式 自动填充（配置见 data.js） ---------- */
+const contactAutofill = bindContactAutofill('place');
+
 /* ---------- 固定归档信息 ---------- */
 const ARCHIVE_ZT = `报告审核: @limanman886  @bayesprism 
 侦探事务所: https://t.me/szmmk_7
@@ -458,6 +461,8 @@ function parseReport(text){
   $('char').value       = char;
   $('experience').value = experience;
 
+  contactAutofill.reset();   // 解析后恢复「地点 → 联系方式」自动跟随
+
   showToast('✅ 已解析并填充表单');
   return true;
 }
@@ -521,6 +526,7 @@ $('resetBtn').addEventListener('click', () => {
     el.value = '';
   });
   $('targetList').innerHTML = '';
+  contactAutofill.reset();   // 清空后恢复自动跟随
   const p = $('preview');
   p.classList.add('placeholder');
   p.textContent = '点击「生成报告」后，最终内容会显示在这里。';

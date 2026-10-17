@@ -277,6 +277,9 @@
 const $ = id => document.getElementById(id);
 const BOT_URL = 'https://t.me/stlmcxbot';
 
+/* ---------- 航线 → 出海联系 自动填充（配置见 data.js 的 REPORT_CONTACTS） ---------- */
+const contactAutofill = bindContactAutofill('route');
+
 /* ---------- 固定归档信息 ---------- */
 const ARCHIVE_HX = `玩家交流
 https://t.me/SZMMKWDHX
@@ -583,6 +586,8 @@ function parseReport(text){
   $('journey').value = journey;
   $('env').value     = env;
 
+  contactAutofill.reset();   // 解析后恢复「航线 → 出海联系」自动跟随
+
   showToast('✅ 已解析并填充表单');
   return true;
 }
@@ -646,6 +651,7 @@ $('resetBtn').addEventListener('click', () => {
     el.value = '';
   });
   $('sailorList').innerHTML = '';
+  contactAutofill.reset();   // 清空后恢复自动跟随
   const p = $('preview');
   p.classList.add('placeholder');
   p.textContent = '点击「生成报告」后，最终内容会显示在这里。';

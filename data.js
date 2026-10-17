@@ -1,6 +1,6 @@
 /* ============================================================
    深圳MMK万事屋 委托报告 —— 数据文件
-   只需修改这个文件即可更新地点和被委托人名单
+   只需修改这个文件即可更新地点、被委托人名单、店家联系方式
    ============================================================ */
 
 /* 地点 → 被委托人 映射（作为「下拉建议」，用户也可手动输入）
@@ -22,6 +22,42 @@ const REPORT_DATA = {
   "柚柠":  ["曲奇", "贝贝", "汐汐", "CC", "安娜", "豆豆"],
   "蜜桃":  ["小7", "柚子", "十五", "七七", "小鱼", "北北", "小白"],
   "恋月":  ["依依", "嘻嘻", "林林", "西米", "悠悠"],
+ "茶颜悦色":  ["里里", "冰冰", "饭饭", "敏敏", "馨馨"],
+ "今喜":  ["薯条", "麦兜", "芊芊", "月月", "依依"],
+ "柚柠":  ["汐汐", "曲奇", "贝贝", "CC", "安娜", "豆豆"],
+  "暮色":  ["咿咿", "糖糖", "小鹿", "可可", "熙熙", "鳕鱼", "路西", "七七", "呆宝", "丢丢", "噗噗", "兽兽", "连连", "小白", "大鹅", "花花", "六六", "安安"],
+};
+
+/* ============================================================
+   地点 → 店家联系方式（选好地点后自动填充到「联系方式」输入框）
+   ------------------------------------------------------------
+   · 键名必须与上面 REPORT_DATA 里的地点名完全一致
+   · 值填该地点的客服 / 店家账号，例如 "@bujidaotoutou"
+   · 值填 ""  → 表示该地点暂无联系方式（选中时会清空联系框）
+   · 整行删掉 → 选中该地点时不会改动联系框（保留原内容）
+   · wsw / zhentan / hangxian 三个页面共用这一份配置
+   ============================================================ */
+const REPORT_CONTACTS = {
+  "布吉岛":   "@bujidaotoutou",   // 例： "@bujidaotoutou"
+  "白月光":   "@bygmmkkf",
+  "富士山下": "@FSSX147",
+  "茉莉花开": "@hao5566778",
+  "喵呜":     "@therainer1994",
+  "西柚":     "@xiyouxkf",
+  "情书":     "@LoveLetterMMK",
+  "禾甜":     "@xcmt001",
+  "海里":     "@Xiaoxi1188",
+  "夜魅":     "@SZ_YMkf",
+  "幽蜜":     "@yomiyominini",
+  "夕颜":     "@xiyannvpu",
+  "魔镜号":   "@lamphone",
+  "柚柠":     "@Youningmm",
+  "蜜桃":     "@Ldrivenn",
+  "恋月":     "@szlymmkkf",
+  "茶颜悦色":     "@cyysmmkkfh",
+  "今喜":     "@XHX7788",
+  "柚柠":     "@Youningmm",
+  "暮色":     "@SZmuse",
 };
 
 /* 归档信息（固定在报告末尾）*/
@@ -29,3 +65,45 @@ const ARCHIVE = `委托报告归档信息
 万事屋交流群：https://t.me/szmmkwsw
 万事屋黑板报：https://t.me/szmmkwswhbb
 审核人：珊迪 @SandyChecks927 伪善 @weishan001 斯泰 @stlmcx007`;
+
+/* ============================================================
+   通用：地点输入框 → 联系方式输入框 自动联动
+   ------------------------------------------------------------
+   页面里调用一次即可：
+     const contactAutofill = bindContactAutofill('place');   // wsw / zhentan
+     const contactAutofill = bindContactAutofill('route');   // hangxian
+   ------------------------------------------------------------
+   规则：
+   · 用户手动改过联系方式后，再换地点不会覆盖他填的内容
+   · 用户把联系方式清空后，重新恢复自动跟随
+   · 清空表单 / 解析报告后可调用 reset() 恢复自动跟随
+   ============================================================ */
+function bindContactAutofill(placeInputId, contactInputId = 'contact'){
+  const placeEl   = document.getElementById(placeInputId);
+  const contactEl = document.getElementById(contactInputId);
+  if(!placeEl || !contactEl){
+    return { reset(){}, refresh(){}, markDirty(){} };
+  }
+
+  let dirty = false;  // 用户是否手动编辑过联系方式
+
+  contactEl.addEventListener('input', () => {
+    dirty = contactEl.value.trim() !== '';
+  });
+
+  function fill(){
+    if(dirty) return;
+    const key = placeEl.value.trim();
+    if(key in REPORT_CONTACTS){
+      contactEl.value = REPORT_CONTACTS[key];
+    }
+  }
+
+  placeEl.addEventListener('input', fill);
+
+  return {
+    reset(){ dirty = false; },     // 恢复自动跟随
+    refresh(){ fill(); },          // 立即按当前地点填充一次
+    markDirty(){ dirty = true; }   // 手动锁定，不再自动覆盖
+  };
+}
