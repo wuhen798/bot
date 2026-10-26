@@ -292,6 +292,27 @@ https://t.me/GSHSCJRZ
 佚名 @XJ9901
 斯泰 @stlmcx007`;
 
+/* ---------- 航线 / 航海员 确保带 # ---------- */
+function ensureHash(v){
+  v = (v || '').trim()
+        .replace(/^＃/, '#')     // 全角转半角
+        .replace(/#\s+/g, '#'); // "# 深圳" → "#深圳"
+  if(!v) return v;
+  return v.startsWith('#') ? v : '#' + v;
+}
+
+/* ---------- 标签规范化：确保每个标签都以 # 开头 ---------- */
+function normalizeTags(raw){
+  if(!raw) return '';
+  // 把 "# 御姐" 这种 # 与词之间带空格的写法合并为 "#御姐"
+  const s = raw.replace(/#\s+/g, '#');
+  return s.split(/[\s,，]+/)
+    .filter(Boolean)
+    .filter(t => t !== '#')
+    .map(t => t.startsWith('#') ? t : '#' + t)
+    .join(' ');
+}
+
 /* ---------- 初始化航线建议（来自 data.js 的键） ---------- */
 function initRoutes(){
   const list = $('routeList');
@@ -386,11 +407,7 @@ function buildReport(){
   const crowd   = $('crowd').value.trim();
   const times   = $('times').value.trim();
 
-  const rawTags = $('tags').value.trim();
-  const tags = rawTags
-    ? rawTags.split(/[\s,，]+/).filter(Boolean)
-        .map(t => t.startsWith('#') ? t : '#' + t).join(' ')
-    : '';
+  const tags = normalizeTags($('tags').value.trim());
 
   const pros = $('pros').value.trim();
   const cons = $('cons').value.trim();
@@ -413,7 +430,7 @@ function buildReport(){
   const env     = $('env').value.trim();
 
   let out = '';
-  out += `航线： ${route}     航海员：${sailor}\n`;
+  out += `航线： ${ensureHash(route)}     航海员：${ensureHash(sailor)}\n`;
   out += `船员\n${crew}\n`;
   out += `出海联系\n${contact}\n`;
   out += `出航经费\n${fee}\n`;
@@ -526,17 +543,18 @@ function parseReport(text){
   const crowd   = after('适合人群');
   const times   = after('返航次数');
 
-  /* 特点标签 */
+  /* 特点标签（支持多行，并统一补 #） */
   let tags = '';
   const tagIdx = T.findIndex(t => t.startsWith('航海员特点'));
   if(tagIdx !== -1){
+    const arr = [];
     for(let j = tagIdx + 1; j < T.length; j++){
       const v = T[j];
       if(!v) continue;
-      if(v.startsWith('优点') || v.startsWith('缺点') || v === '评分') break;
-      tags = v;
-      break;
+      if(v.startsWith('优点') || v.startsWith('缺点') || v.startsWith('评分')) break;
+      arr.push(v);
     }
+    tags = arr.join(' ');
   }
 
   const pros = inlineAfter('优点：') || inlineAfter('优点:');
@@ -554,11 +572,11 @@ function parseReport(text){
 
   /* ---- 回填 ---- */
   if(route){
-    $('route').value = route;
+    $('route').value = ensureHash(route);
     $('route').dispatchEvent(new Event('input'));  // 触发航海员列表更新
   }
   if(sailor){
-    $('sailor').value = sailor;
+    $('sailor').value = ensureHash(sailor);
   }
 
   $('crew').value    = crew;
@@ -567,7 +585,7 @@ function parseReport(text){
   if(dateStr) $('date').value = dateStr.replace(/[\/.]/g, '-');
   $('crowd').value   = crowd;
   $('times').value   = times;
-  $('tags').value    = tags;
+  $('tags').value    = normalizeTags(tags);
   $('pros').value    = pros;
   $('cons').value    = cons;
 
